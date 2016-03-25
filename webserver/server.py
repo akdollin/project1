@@ -368,7 +368,7 @@ def rate():
   for result in cursor:
     rateList.append((result.title, result.value))
   cursor.close()
-  #userid = 'kivi'
+  #userid = 'kivi' test 
   context = dict(rateList=rateList, username = userid)
   return render_template("rate.html", **context) 
 
