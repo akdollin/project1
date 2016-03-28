@@ -17,7 +17,7 @@
 
       {% for position, title in queue %}
         <tr>
-          <td>{{ position }}</td><td>{{ title }}</td>
+          <td>{{ position }}</td><td><a href="movieinfo">{{title}}</a></td>
         </tr>
       {% endfor %}
 
@@ -40,8 +40,7 @@
   <a href="rate">View Rating History</a> <!-- Link to rate.html page -->
   <p>
   <a href="searchhistory">View Search History</a> <!-- Link to searchHistory page -->
-  <p><b>
-  <a href="browse">Browse Movies Here!</a></b> <!-- Link to general browse page -->
+  <p><b><a href="browse">Browse Movies Here!</a></b> <!-- Link to general browse page -->
 
 
 

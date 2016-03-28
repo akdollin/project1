@@ -257,6 +257,7 @@ def signup():
 def home():
     try:
         userid = session['username']
+        print 'hi'
         cursor = g.conn.execute(text('SELECT q.position, m.title FROM queue q, movies m WHERE q.userid = :name AND q.movid = m.movid ORDER BY q.position'), name = userid)
         queue = []
         for result in cursor:
@@ -265,7 +266,7 @@ def home():
         context = dict(queue = queue, blabla = 'blabla', username = userid)
     #context = dict(blabla = 'blabla')
     except:
-        import traceback; traceback.print_exc()
+        import traceback; 
     return render_template("home.html", **context)
 
 
@@ -376,62 +377,63 @@ def rate():
 @app.route('/browse', methods=['GET', 'POST'])
 def browse():
   userid = session['username']
-  cursor = g.conn.execute(text('Select m.title, m.year, g.genreName FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.title ASC'))
+  cursor = g.conn.execute(text('Select m.title, m.year, g.genreName, m.movid FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.title ASC'))
 
   movieList = []
   for result in cursor:
-    movieList.append((result.title, result.year, result[2])) 
+    movieList.append((result.title, result.year, result[2], result[3])) 
   cursor.close()
-  
+  context = dict(movieList=movieList, username = userid)
+
 
   if request.method == 'POST':
     sort = request.form['sort']
     if sort == 'Sort By Title':
-      cursor = g.conn.execute(text('Select m.title, m.year, g.genreName FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.title ASC'))
-      movieList = []
+      cursor = g.conn.execute(text('Select m.title, m.year, g.genreName, m.movid FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.title ASC'))
+      movieList1 = []
       for result in cursor:
-        movieList.append((result.title, result.year, result[2]))
+        movieList1.append((result.title, result.year, result[2], result[3]))
       cursor.close()
+      context = dict(movieList1=movieList1, username = userid)
+
     if sort == 'Sort By Year':
-      cursor = g.conn.execute(text('Select m.year, m.title, g.genreName FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.year'))
-      movieList = []
+      cursor = g.conn.execute(text('Select m.year, m.title, g.genreName, m.movid FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.year'))
+      movieList2 = []
       for result in cursor:
-        movieList.append((result.year, result.title, result[2]))
+        movieList2.append((result.year, result.title, result[2], result[3]))
       cursor.close()
+      context = dict(movieList2=movieList2, username = userid)
+
     if sort == 'Sort By Genre':
-      cursor = g.conn.execute(text('Select g.genreName, m.title, m.year FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY g.genreName'))
-      movieList = []
+      cursor = g.conn.execute(text('Select g.genreName, m.title, m.year, m.movid FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY g.genreName'))
+      movieList3 = []
       for result in cursor:
-        movieList.append((result[0], result.title, result.year))
+        movieList3.append((result[0], result.title, result.year, result[3]))
       cursor.close()
+      context = dict(movieList3=movieList3, username = userid)
 
   #userid = 'kivi'
-  context = dict(movieList=movieList, username = userid)
   return render_template("browse.html", **context)
 
 @app.route('/movieinfo', methods=['GET', 'POST'])
 def movieinfo():
   userid = session['username']
-  cursor = g.conn.execute(text('Select m.title, m.year, g.genreName FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.title ASC'))
 
-  movieList = []
-  for result in cursor:
-    movieList.append((result.title, result.year, result[2])) 
-  cursor.close()
-  
+  movieinfoList = []
 
   if request.method == 'POST':
-    sort = request.form['sort']
-    if sort == 'Sort By Title':
-      cursor = g.conn.execute(text('Select m.title, m.year, g.genreName FROM Movies m, CategorizedBy c, Genres g WHERE m.movid = c.movid AND c.genreid = g.genreid ORDER BY m.title ASC'))
-      movieList = []
-      for result in cursor:
-        movieList.append((result.title, result.year, result[2]))
-      cursor.close()
+    movid = request.form['movid']
+    print "hello"
+    if movid == 'movid':
+      cursor = g.conn.execute(text('Select m.title, m.year, m.length, m.imdbrating from movies m WHERE movid= :movid'), movid = movID)
 
+    
+    for result in cursor:
+      movieinfoList.append((result.title, result.year, result.length, result.imdbrating)) 
+    cursor.close()
 
-  #userid = 'kivi'
-  context = dict(movieList=movieList, username = userid)
+    #userid = 'kivi'
+  context = dict(movieinfoList=movieinfoList, username = userid)
   return render_template("movieinfo.html", **context)
 
 
