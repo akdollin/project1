@@ -339,7 +339,39 @@ def search():
     cursor.close()
 
     context = dict(input = input, movies = list)
+    try:
+        originput = request.form['search']
+        input = '%' + originput + '%'
+        
+        cursor = g.conn.execute(text('SELECT title, movid FROM movies WHERE title LIKE :inpt'), inpt = input)
+        movlist = []
+        for row in cursor:
+            movlist.append(row)
+        cursor.close()
 
+        cursor = g.conn.execute(text('SELECT artistfirstname, artistlastname, artistid FROM artists WHERE artistfirstname LIKE :inpt OR artistlastname LIKE :inpt'), inpt = input)
+        artlist = []
+        for row in cursor:
+            artlist.append(row)
+        cursor.close()
+
+        cursor = g.conn.execute(text('SELECT genrename, genreid FROM genres WHERE genrename LIKE :inpt'), inpt = input)
+        genlist = []
+        for row in cursor:
+            genlist.append(row)
+        cursor.close()
+
+        cursor = g.conn.execute(text('SELECT DISTINCT awardname, year FROM awards WHERE awardname LIKE :inpt OR category LIKE :inpt OR role LIKE :inpt OR artist LIKE :inpt'), inpt = input)
+        awlist = []
+        for row in cursor:
+            awlist.append(row)
+        cursor.close()
+
+        context = dict(originput = originput, movies = movlist, artists = artlist, genres = genlist, awards = awlist)
+
+    except:
+        import traceback; traceback.print_exc()
+    print request.args
     return render_template("/search.html", **context)
 
 
@@ -415,24 +447,25 @@ def browse():
   #userid = 'kivi'
   return render_template("browse.html", **context)
 
+
 @app.route('/movieinfo', methods=['GET', 'POST'])
 def movieinfo():
   userid = session['username']
 
   movieinfoList = []
 
-  if request.method == 'POST':
-    movid = request.form['movid']
-    print "hello"
-    if movid == 'movid':
-      cursor = g.conn.execute(text('Select m.title, m.year, m.length, m.imdbrating from movies m WHERE movid= :movid'), movid = movID)
+  movid = request.args.get('movid')
 
-    
-    for result in cursor:
-      movieinfoList.append((result.title, result.year, result.length, result.imdbrating)) 
-    cursor.close()
 
-    #userid = 'kivi'
+  #movid = request.form['movid']
+
+  
+  cursor = g.conn.execute(text('Select m.title, m.year, m.length, m.imdbrating from movies m WHERE movid= :movid'), movid = movid)
+
+  for result in cursor:
+    movieinfoList.append((result.title, result.year, result.length, result.imdbrating)) 
+  cursor.close()
+
   context = dict(movieinfoList=movieinfoList, username = userid)
   return render_template("movieinfo.html", **context)
 
