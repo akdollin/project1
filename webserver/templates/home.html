@@ -15,9 +15,9 @@
   <div>
       <table>    <!-- this is to format the table nicely -->
 
-      {% for position, title in queue %}
+      {% for position, title, movid in queue %}
         <tr>
-          <td>{{ position }}</td><td><a href="movieinfo">{{title}}</a></td>
+          <td>{{ position }}</td><td><a href="movieinfo?movid={{movid}}">{{title}}</a></td>
         </tr>
       {% endfor %}
 

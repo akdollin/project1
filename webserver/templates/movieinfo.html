@@ -21,7 +21,7 @@
 
       {% for title, year, length, imdbrating in movieinfoList %}
         <tr>
-          <td><a href="movieinfo">{{title}}</a></td><td>{{ year }}</td><td>{{ length }}</td><td>{{ imdbrating }}</td>
+          <td><a href="movieinfo?movid={{movid}}">{{title}}</a></td><td>{{ year }}</td><td>{{ length }}</td><td>{{ imdbrating }}</td>
         </tr>
       {% endfor %}
 

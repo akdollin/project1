@@ -19,9 +19,9 @@
   <div>
       <table>
 
-      {% for title, movTimeSearch in searchmovList %}
+      {% for title, movTimeSearch, movid in searchmovList %}
         <tr>
-          <td><a href="movieinfo">{{title}}</a></td><td>:</td><td>{{ movTimeSearch }}</td>
+          <td><a href="movieinfo?movid={{movid}}">{{title}}</a></td><td>:</td><td>{{ movTimeSearch }}</td>
         </tr>
       {% endfor %}
 
@@ -35,9 +35,9 @@
   <div>
       <table>
 
-      {% for firstNameandlastName, artTimeSearch in searchartList %}
+      {% for firstNameandlastName, artTimeSearch, artistid in searchartList %}
         <tr>
-          <td><a href="artistinfo">{{firstNameandlastName}}</a></td><td>:</td><td>{{ artTimeSearch }}</td>
+          <td><a href="artistinfo?artistid={{artistid}}">{{firstNameandlastName}}</a></td><td>:</td><td>{{ artTimeSearch }}</td>
         </tr>
       {% endfor %}
 

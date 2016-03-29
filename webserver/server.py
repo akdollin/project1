@@ -258,12 +258,12 @@ def home():
     try:
         userid = session['username']
         print 'hi'
-        cursor = g.conn.execute(text('SELECT q.position, m.title FROM queue q, movies m WHERE q.userid = :name AND q.movid = m.movid ORDER BY q.position'), name = userid)
+        cursor = g.conn.execute(text('SELECT q.position, m.title, m.movid FROM queue q, movies m WHERE q.userid = :name AND q.movid = m.movid ORDER BY q.position'), name = userid)
         queue = []
         for result in cursor:
             queue.append(result)  # can also be accessed using result[0]
         cursor.close()
-        context = dict(queue = queue, blabla = 'blabla', username = userid)
+        context = dict(queue = queue, username = userid)
     #context = dict(blabla = 'blabla')
     except:
         import traceback; 
@@ -378,16 +378,16 @@ def search():
 @app.route('/searchhistory', methods=['GET', 'POST'])
 def searchhistory():
   userid = session['username']
-  cursor = g.conn.execute(text('Select m.title, s.movTimeSearch FROM Movies m, searchHistory_Movies s WHERE s.userid= :name AND s.movid=m.movid ORDER BY s.movTimeSearch DESC'), name = userid)
+  cursor = g.conn.execute(text('Select m.title, s.movTimeSearch, m.movid FROM Movies m, searchHistory_Movies s WHERE s.userid= :name AND s.movid=m.movid ORDER BY s.movTimeSearch DESC'), name = userid)
   searchmovList = []
   for result in cursor:
-    searchmovList.append((result.title, result[1]))
+    searchmovList.append((result.title, result[1], result[2]))
   cursor.close()
 
-  cursor2 = g.conn.execute(text('Select a.artistfirstName, a.artistlastname, s.artTimeSearch FROM Artists a, searchHistory_Artists s WHERE s.userid = :name AND  s.artistid=a.artistid ORDER BY s.artTimeSearch DESC'), name = userid)
+  cursor2 = g.conn.execute(text('Select a.artistfirstName, a.artistlastname, s.artTimeSearch, a.artistid FROM Artists a, searchHistory_Artists s WHERE s.userid = :name AND  s.artistid=a.artistid ORDER BY s.artTimeSearch DESC'), name = userid)
   searchartList = []
   for result2 in cursor2:
-    searchartList.append((result2[0]+' '+result2[1], result2[2]))
+    searchartList.append((result2[0]+' '+result2[1], result2[2], result2[3]))
   cursor2.close()
 
   context = dict(searchmovList=searchmovList, searchartList = searchartList, username = userid)
@@ -397,10 +397,10 @@ def searchhistory():
 @app.route('/rate', methods=['GET', 'POST'])
 def rate():
   userid = session['username']
-  cursor = g.conn.execute(text('Select m.title, r.value FROM movies m, rate r WHERE r.userid = :name AND  r.movid=m.movid ORDER BY r.value DESC'), name = userid)
+  cursor = g.conn.execute(text('Select m.title, r.value, m.movid FROM movies m, rate r WHERE r.userid = :name AND  r.movid=m.movid ORDER BY r.value DESC'), name = userid)
   rateList = []
   for result in cursor:
-    rateList.append((result.title, result.value))
+    rateList.append((result.title, result.value, result[2]))
   cursor.close()
   #userid = 'kivi' test 
   context = dict(rateList=rateList, username = userid)
@@ -455,10 +455,6 @@ def movieinfo():
   movieinfoList = []
 
   movid = request.args.get('movid')
-
-
-  #movid = request.form['movid']
-
   
   cursor = g.conn.execute(text('Select m.title, m.year, m.length, m.imdbrating from movies m WHERE movid= :movid'), movid = movid)
 
@@ -469,6 +465,22 @@ def movieinfo():
   context = dict(movieinfoList=movieinfoList, username = userid)
   return render_template("movieinfo.html", **context)
 
+@app.route('/artistinfo', methods=['GET', 'POST'])
+def artistinfo():
+  userid = session['username']
+  print "hello"
+  artistinfoList = []
+
+  artistid = request.args.get('artistid')
+
+  cursor = g.conn.execute(text('Select a.artistfirstName, a.artistlastname, a.DOB, a.artistid from Artists a WHERE a.artistid= :artistid'), artistid = artistid)
+
+  for result in cursor:
+    artistinfoList.append((result.artistfirstName, result.artistlastname, result.DOB, result.artistid))  
+  cursor.close()
+
+  context = dict(artistinfoList=artistinfoList, username = userid)
+  return render_template("artistinfo.html", **context)
 
 @app.route('/hooray')
 def hooray():
