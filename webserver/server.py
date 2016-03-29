@@ -257,16 +257,15 @@ def signup():
 def home():
     try:
         userid = session['username']
-        print 'hi'
         cursor = g.conn.execute(text('SELECT q.position, m.title, m.movid FROM queue q, movies m WHERE q.userid = :name AND q.movid = m.movid ORDER BY q.position'), name = userid)
         queue = []
         for result in cursor:
             queue.append(result)  # can also be accessed using result[0]
         cursor.close()
-        context = dict(queue = queue, username = userid)
+        context = dict(queue = queue, blabla = 'blabla', username = userid)
     #context = dict(blabla = 'blabla')
     except:
-        import traceback; 
+        import traceback; traceback.print_exc()
     return render_template("home.html", **context)
 
 
@@ -281,11 +280,22 @@ def home():
 @app.route('/managestreamacc', methods=['GET', 'POST'])
 def managestreamacc():
     userid = session['username']
+
+    # if manage == 'Delete':
+    #   try:
+    #     exaccid = request.form['exaccid']
+    #     g.conn.execute(text('DELETE FROM externalaccounts WHERE extaccid = :eid'), eid = exaccid)
+    #   except:
+    #       import traceback; traceback.print_exc()
+      #return redirect('/managestreamacc')
+
+    #userid = session['username']
     cursor = g.conn.execute(text('SELECT x.extservname, e.extaccun, e.extaccid FROM belongto b, servedby s, externalaccounts e, externalservices x where b.userid = :name AND e.extaccid = b.extaccid AND e.extaccid=s.extaccid AND x.extservid=s.extservid'), name = userid)
     list = []
     for row in cursor:
         list.append(row)
     cursor.close()
+
     context = dict(username = userid, accounts = list)
     return render_template("managestreamacc.html", **context)
 
@@ -300,22 +310,93 @@ def managestreamacc():
 @app.route('/addstreamacc', methods=['GET', 'POST'])
 def addstreamacc():
     userid = session['username']
-    cursor = g.conn.execute(text('SELECT extservname FROM externalservices'))
+    cursor = g.conn.execute(text('SELECT extservid, extservname FROM externalservices'))
     menu = []
     for row in cursor:
         menu.append(row)
     cursor.close()
     getcontext = dict(menu = menu)
-    if request.method == 'POST':
-        
-        service = request.form['service']
-        exaccun = request.form['exaccun']
-        exaccpw = request.form['exaccpw']
-    
-        currmaxid = g.conn.execute(text('SELECT max(extaccid) from externalaccounts'))
-        cursor = g.conn.execute(text('SELECT extaccun FROM externalaccounts WHERE extaccun = :un AND extservid = '), un = exaccun)
 
+    if request.method == 'POST':
+        try:
+          service = request.form['service']
+          #print "service = %d \n" % service
+          exaccun = request.form['exaccun']
+          exaccpw = request.form['exaccpw']
+    
+          maxaccid = g.conn.execute(text('SELECT max(extaccid) FROM externalaccounts'))
+          mid = maxaccid.fetchone()[0]
+          #servid = g.conn.execute(text('SELECT extservid FROM externalservices WHERE extservid = 201'), serv = service)
+          #print "servid = %s \n" % servid
+          #sid = servid.fetchone();
+          #print "sid = %s \n" % sid
+          cursor = g.conn.execute(text('SELECT a.extaccun FROM externalaccounts a, externalservices s WHERE a.extaccun = :un AND s.extservid = :serv'), un = exaccun, serv = service)
+
+          row = cursor.fetchone()
+          if not row:
+            g.conn.execute(text('INSERT INTO externalaccounts VALUES (:id+1, :un, :pw)'), id = mid, un = exaccun, pw = exaccpw)
+            g.conn.execute(text('INSERT INTO servedby VALUES (:id+1, :serv)'), id = mid, serv = service)
+            g.conn.execute(text('INSERT INTO belongto VALUES (:uid, :id+1)'), uid = userid, id = mid)
+          cursor.close()
+        except:
+          import traceback; traceback.print_exc()
+        return redirect('/managestreamacc')
     return render_template("/addstreamacc.html", **getcontext)
+
+
+@app.route('/deletestreamacc', methods=['GET', 'POST'])
+def deletestreamacc():
+    userid = session['username']
+    exaccid = request.form['exaccid']
+    g.conn.execute(text('DELETE FROM externalaccounts WHERE extaccid = :eid'), eid = exaccid)
+    return redirect('/managestreamacc')
+
+
+@app.route('/editstreamacc', methods=['POST'])
+def editstreamacc():
+  try:
+    userid = session['username']
+    exaccid = request.form['exaccid']
+    manage = request.form['manage']
+    if manage == 'Delete':   
+      g.conn.execute(text('DELETE FROM externalaccounts WHERE extaccid = :eid'), eid = exaccid)
+      return redirect('/managestreamacc')
+    if manage == 'Update':
+      cursor = g.conn.execute(text('SELECT x.extservname FROM servedby s, externalservices x where s.extaccid = :eid and s.extservid = x.extservid'), eid = exaccid)
+      esname = cursor.fetchone()
+      context = dict(exaccid = exaccid, esname = esname)
+      return render_template("/updatestreamacc.html", **context)
+      #g.conn.execute(text('UPDATE externalaccounts SET extaccun = 'testupdate', extaccpw = 'testupdate1' where extaccid = 16'))
+
+    #exaccid = request.form['exaccid']
+    #g.conn.execute(text('DELETE FROM externalaccounts WHERE extaccid = :eid'), eid = exaccid)
+  except:
+          import traceback; traceback.print_exc()
+  return redirect('/managestreamacc')
+
+
+@app.route('/replacestreamacc', methods=['GET', 'POST'])
+def replacestreamacc():
+  try:
+    print "in function\n"
+    userid = session['username']
+    print "userid %s \n" % userid
+    exaccid = request.form['exaccid']
+    print "exaccid %d \n" % exaccid
+    esname = request.form['esname']
+    print "esname %s \n" % esname
+
+    exaccun = request.form['exaccun']
+    print "exaccun %s \n" % exaccun
+    exaccpw = request.form['exaccpw']
+    print "exaccpw %s \n" % exaccpw
+    
+
+    g.conn.execute(text('UPDATE externalaccounts SET extaccun = :eun, extaccpw = :pw where extaccid = :un'), eun = exaccun, pw = exaccpw, un = userid)
+  except:
+    import traceback; traceback.print_exc()
+  return redirect('/managestreamacc')
+  
 
 
 #
@@ -328,17 +409,6 @@ def addstreamacc():
 #
 @app.route('/search', methods=['GET', 'POST'])
 def search():
-    input = request.form['search']
-    input = '%' + input + '%'
-        
-    
-    cursor = g.conn.execute(text('SELECT title FROM movies WHERE title LIKE :inpt'), inpt = input)
-    list = []
-    for row in cursor:
-      list.append(row)
-    cursor.close()
-
-    context = dict(input = input, movies = list)
     try:
         originput = request.form['search']
         input = '%' + originput + '%'
@@ -375,6 +445,22 @@ def search():
     return render_template("/search.html", **context)
 
 
+
+@app.route('/watchhistory', methods=['GET', 'POST'])
+def watchhistory():
+  try:
+    userid = session['username']
+    cursor = g.conn.execute(text('SELECT m.title, w.datewatched, x.extservname, m.movid FROM movies m, watched w, externalaccounts e, externalservices x, servedby s, belongto b WHERE m.movid = w.movid AND w.extaccid = e.extaccid AND e.extaccid = b.extaccid AND e.extaccid = s.extaccid AND x.extservid = s.extservid AND b.userid = :username ORDER BY w.datewatched ASC'), username = userid)
+    watchlist = []
+    for result in cursor:
+      watchlist.append((result.title, result.datewatched, result.extservname, result.movid))
+    cursor.close()
+    context = dict(watchlist = watchlist, username = userid)
+  except:
+    import traceback; traceback.print_exc()
+  return render_template("watchhistory.html", **context)
+
+
 @app.route('/searchhistory', methods=['GET', 'POST'])
 def searchhistory():
   userid = session['username']
@@ -392,6 +478,15 @@ def searchhistory():
 
   context = dict(searchmovList=searchmovList, searchartList = searchartList, username = userid)
   return render_template("searchhistory.html", **context)
+  cursor1 = g.conn.execute(text('Select m.title, s.movTimeSearch FROM Movies m, searchHistory_Movies s WHERE s.userid= :name AND s.movid=m.movid ORDER BY s.movTimeSearch DESC'), name = userid)
+  searchList = []
+  searchList.append(('hello','29'))
+  for result in cursor1:
+    searchList.append((result.title, result.movTimeSearch))
+  cursor1.close()
+  # #userid = 'kivi'
+  context = dict(searchList=searchList, username = userid)
+  return render_template("searchHistory.html", **context)
 
 
 @app.route('/rate', methods=['GET', 'POST'])
@@ -455,32 +550,72 @@ def movieinfo():
   movieinfoList = []
 
   movid = request.args.get('movid')
-  
-  cursor = g.conn.execute(text('Select m.title, m.year, m.length, m.imdbrating from movies m WHERE movid= :movid'), movid = movid)
+
+  cursor = g.conn.execute(text('Select m.title, m.year, m.length, m.imdbrating, m.movid from movies m WHERE movid= :movid'), movid = movid)
 
   for result in cursor:
-    movieinfoList.append((result.title, result.year, result.length, result.imdbrating)) 
+    movieinfoList.append((result.title, result.year, result.length, result.imdbrating, result.movid)) 
   cursor.close()
 
+
+  if request.method == 'POST':
+    add = request.form['add']
+    if add == 'Add To Queue':
+      try: 
+        movid = request.form['movid']
+        print "movid = %s\n" % movid
+
+        print "hope this shows up"
+        import datetime;  
+        date = datetime.date.today()
+        maxPos = g.conn.execute(text('SELECT max(position) FROM Queue q  WHERE q.userid= :userid'), userid = userid)
+        newmax = maxPos.fetchone()[0] + 1
+      
+        # print "movid = %s\n" % movid
+        g.conn.execute(text('insert into queue values (:userid, :movid, :newmax, :date)'), userid=userid, movid=movid, newmax=newmax, date = date)
+      except:
+        import traceback; traceback.print_exc()
+      return redirect("/home") 
+
   context = dict(movieinfoList=movieinfoList, username = userid)
+
   return render_template("movieinfo.html", **context)
+
+
+
 
 @app.route('/artistinfo', methods=['GET', 'POST'])
 def artistinfo():
   userid = session['username']
   print "hello"
-  artistinfoList = []
 
-  artistid = request.args.get('artistid')
+  try:
+    artistinfoList = []
 
-  cursor = g.conn.execute(text('Select a.artistfirstName, a.artistlastname, a.DOB, a.artistid from Artists a WHERE a.artistid= :artistid'), artistid = artistid)
+    artistid = request.args.get('artistid')
 
-  for result in cursor:
-    artistinfoList.append((result.artistfirstName, result.artistlastname, result.DOB, result.artistid))  
-  cursor.close()
+    cursor = g.conn.execute(text('Select a.artistfirstName, a.artistlastname, a.dob, a.artistid FROM Artists a WHERE a.artistid= :artistid'), artistid = artistid)
+    for result in cursor:
+      artistinfoList.append((result[0], result[1], result.dob, result.artistid))  
+    cursor.close()
 
-  context = dict(artistinfoList=artistinfoList, username = userid)
+    artistinfoList1 = []
+
+    cursor = g.conn.execute(text('Select m.title, m.movid from Starredin s, Movies m WHERE s.artistid = :artistid AND m.movid = s.movid'), artistid = artistid)
+
+    for result in cursor:
+      artistinfoList1.append((result.title, result.movid))  
+
+    for result in artistinfoList1:
+      print result
+      
+    cursor.close()
+  except:
+    import traceback; traceback.print_exc()
+  context = dict(artistinfoList=artistinfoList, artistinfoList1=artistinfoList1, username = userid)
   return render_template("artistinfo.html", **context)
+  
+
 
 @app.route('/hooray')
 def hooray():

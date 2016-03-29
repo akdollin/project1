@@ -1,0 +1,40 @@
+<html>
+  <style>
+    body{ 
+      font-size: 15pt;
+      font-family: arial;
+    }
+  </style>
+  <style type="text/css">
+  td
+  {
+      padding:0 15px 0 15px;
+  }
+  </style>
+
+<body>
+    <p>Login: {{username}}</p>
+    <p>
+    <p>
+    <h1>Here are movies you have watched!</h1>
+  
+  
+  <p><b>Watch History:</b></p><p></p>
+  
+  <div>
+      <table>
+      {% for title, date, extservname, movid in watchlist %}
+        <tr>
+          <td><a href="movieinfo?movid={{movid}}">{{title}}</a></td><td>{{ date }} </td><td>{{ extservname }}</td>
+
+        </tr>
+      {% endfor %}
+
+      </table>
+  </div>
+  
+
+</body>
+
+
+</html>

@@ -27,7 +27,7 @@
         <table>    <!-- this is to format the table nicely -->
             {% for row in artists %}
             <tr>
-                <td>{{ row[0] }} {{ row[1] }}</td>
+                <td><a href="artistinfo?artistid={{row[2]}}">{{ row[0] }} {{ row[1] }}</td>
                 <input type="hidden" name="artid" value="{{row[2]}}">
             </tr>
             {% endfor %}
@@ -64,6 +64,9 @@
       {% endfor %}
   </div>
   
+  <p><p><p>
+  <p><a href="/home">Back to home.</a></p>
+  <p> <form method="POST" action="/logout"><input type="submit" value="Logout"></p></form>
 
 
 </body>
